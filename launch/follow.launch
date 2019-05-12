@@ -1,0 +1,5 @@
+<!-- turtlebot follow ar tag node -->
+<launch>
+	<include file="$(find raspicam_node)/launch/camerav2_1280x960.launch"/>
+	<include file="$(find tracker)/launch/ar_track.launch"/>
+</launch>
