@@ -4,9 +4,9 @@
 	  <arg name="max_new_marker_error" default="0.05" />
 	  <arg name="max_track_error"      default="0.05" />
 
-	  <arg name="cam_image_topic"      default="/raspicam_node/image/compressed" />
+	  <arg name="cam_image_topic"      default="/raspicam_node/image/raw" />
 	  <arg name="cam_info_topic"       default="/raspicam_node/camera_info" />
-	  <arg name="output_frame"         default="/v4l_frame" />
+	  <arg name="output_frame"         default="raspicam" />
 	  <arg name="record" default="0" />
 
 	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen">
