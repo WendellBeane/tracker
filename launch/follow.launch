@@ -4,5 +4,7 @@
 
 	<node name="decompress_image" type="republish" pkg="image_transport" args="compressed in:=raspicam_node/image raw out:=/raspicam_node/image/raw" />
 
+	<include file="$(find turtlebot3_bringup)/launch/turtlebot3_robot.launch"/>
+
 	<include file="$(find tracker)/launch/ar_track.launch"/>
 </launch>
