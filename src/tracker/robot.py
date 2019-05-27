@@ -8,7 +8,7 @@ from nav_msgs.msg import Odometry
 import rospy
 import tf
 
-from capture_prey_sim.msg import WifiStrength
+from tracker.msg import Formation
 from sensor_msgs.msg import LaserScan
 
 # constants
@@ -17,17 +17,11 @@ GOAL_THRESH = 0.15
 class Robot:
     def __init__(self, freq=1):
 
-        # initialize subscriber for static target (this code assumes that target is known)
-        rospy.Subscriber("/robot_0/base_pose_ground_truth", Odometry, self.odometry_callback_target)
-
-        # target pose variables
-        self.x_target = None
-        self.y_target = None
-        # self.yaw_target = None    # TODO: might want to account for this later when determining goal points for each robot
-
         # initialize subscribers (for hunters)
         rospy.Subscriber("/robot_1/base_pose_ground_truth", Odometry, self.odometry_callback_1)
         rospy.Subscriber("/robot_1/base_scan", LaserScan, self.laser_scan_callback_1)
+
+        rospy.Subscriber("/compute", Formation, self.compute_callback)
 
         # publishers for hunters
         self.cmd_pub = rospy.Publisher("/robot_1/cmd_vel", Twist, queue_size = 1)
@@ -38,6 +32,8 @@ class Robot:
         self.y = None
         self.yaw = None
 
+        self.goals = None
+
         # behavioral state machine
         self.curr_state = "COMPUTE" #TODO: Change to SEARCH or IDLE when that is written
         self.next_state = None
@@ -46,18 +42,17 @@ class Robot:
     def spin(self):
         r = rospy.Rate(10)
         while not rospy.is_shutdown():
-            # rospy.loginfo("X: " + str(self.x) + " Y: " + str(self.y) + " YAW: " + str(self.yaw))
-            # rospy.loginfo("target_X: " + str(self.x_target) + " target_Y: " + str(self.y_target))
 
             if self.curr_state == "COMPUTE":
-                print("in compute")
-                # TODO: Publish list of 3 formation points, each hunter grabs a point 
-                self.next_state = "APPROACH"
+                if self.goals is None:  # wait for the target to be detected and pose to be stored
+                    self.next_state = "COMPUTE"
+                else:
+                    self.next_state = "APPROACH"
 
             elif self.curr_state == "APPROACH":
                 rospy.loginfo("CURRENT STATE: APPROACH")
 
-                x_goal, y_goal = self.x_target, self.y_target + 1 # TODO: computations needed here
+                x_goal, y_goal = self.goals[0].x, self.goals[0].y # TODO: dynamic allocation needed here
                 
                 # send commands to hunter bot if the goal is outside of certain error threshold
                 if self.euclidean_distance(x_goal, y_goal) >= GOAL_THRESH:
@@ -95,21 +90,14 @@ class Robot:
         return constant * (self.steering_angle(x_goal, y_goal) - self.yaw)
 
 
+    def compute_callback(self, formation_msg):
+        goals = formation_msg.points
 
-    def odometry_callback_target(self, odometry_msg):
-        pose = odometry_msg.pose.pose
-        quaternion = (
-            pose.orientation.x,
-            pose.orientation.y,
-            pose.orientation.z,
-            pose.orientation.w)
-        euler = tf.transformations.euler_from_quaternion(quaternion)
-        yaw = euler[2]
-
-        # update invidual robot's position
-        self.x_target = pose.position.x
-        self.y_target = pose.position.y
-        self.yaw_target = yaw
+        # update goals
+        if goals[0] == goals[1] and goals[1] == goals[2] and goals[0] == goals[2]:
+            self.goals = None
+        else:
+            self.goals = goals
 
 
     def odometry_callback_1(self, odometry_msg):

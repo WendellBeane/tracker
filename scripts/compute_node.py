@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
 import tf
-from math import sin, cos
+from math import sin, cos, pi
 
 # import the custom formation message
 from tracker.msg import Formation
@@ -9,7 +9,7 @@ from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
 
 
-DISTANCE = 0.5
+DISTANCE = 1
 class Compute:
 
     def __init__ (self):
@@ -40,17 +40,6 @@ class Compute:
         self.target_y = pose.position.y
         self.target_yaw = yaw
 
-    # # find the formation points
-    # def updateFormationPoints(self, msg):
-    #     if self.target_x and self.target_y:
-    #         msg.points[0].x = self.target_x
-    #         msg.points[0].y = self.target_y + 1
-
-    #         # msg = Formation()
-    #         # msg.points.append = point
-
-    #         return msg
-
 
 if __name__ == "__main__":
     rospy.init_node('compute', anonymous=True)
@@ -68,11 +57,14 @@ if __name__ == "__main__":
         point2 = Point()
 
         if compute.target_x and compute.target_y and compute.target_yaw:
-            point0.x = compute.target_x + DISTANCE * sin(compute.target_yaw)
-            point0.y = compute.target_y + DISTANCE * cos(compute.target_yaw)
+            point0.x = compute.target_x + DISTANCE * cos(compute.target_yaw + float(pi)/float(6.0))
+            point0.y = compute.target_y + DISTANCE * sin(compute.target_yaw + float(pi)/float(6.0))
             
-            point1.x, point1.y = compute.target_x, compute.target_y
-            point2.x, point2.y = compute.target_x, compute.target_y
+            point1.x = compute.target_x + DISTANCE * cos(compute.target_yaw + float(5.0*pi)/float(6.0))
+            point1.y = compute.target_y + DISTANCE * sin(compute.target_yaw + float(5.0*pi)/float(6.0))
+
+            point2.x = compute.target_x + DISTANCE * cos(compute.target_yaw + float(3.0*pi)/float(2.0))
+            point2.y = compute.target_y + DISTANCE * sin(compute.target_yaw + float(3.0*pi)/float(2.0))
 
 
         msg.points.append(point0)
