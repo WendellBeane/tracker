@@ -15,16 +15,18 @@ from sensor_msgs.msg import LaserScan
 GOAL_THRESH = 0.15
 
 class Robot:
-    def __init__(self, freq=1):
+    def __init__(self, name, freq=1):
+
+        self.name = name
 
         # initialize subscribers (for hunters)
-        rospy.Subscriber("/robot_1/base_pose_ground_truth", Odometry, self.odometry_callback_1)
-        rospy.Subscriber("/robot_1/base_scan", LaserScan, self.laser_scan_callback_1)
+        rospy.Subscriber("/" + self.name + "/base_pose_ground_truth", Odometry, self.odometry_callback_1)
+        rospy.Subscriber("/" + self.name + "/base_scan", LaserScan, self.laser_scan_callback_1)
 
         rospy.Subscriber("/compute", Formation, self.compute_callback)
 
         # publishers for hunters
-        self.cmd_pub = rospy.Publisher("/robot_1/cmd_vel", Twist, queue_size = 1)
+        self.cmd_pub = rospy.Publisher("/" + self.name + "/cmd_vel", Twist, queue_size = 1)
         self.cmd_vel = Twist()
 
         # pose variables
@@ -44,16 +46,27 @@ class Robot:
         while not rospy.is_shutdown():
 
             if self.curr_state == "COMPUTE":
+                x_goal = None
+                y_goal = None
+
                 if self.goals is None:  # wait for the target to be detected and pose to be stored
                     self.next_state = "COMPUTE"
                 else:
-                    self.next_state = "APPROACH"
+                    if self.name == "robot_1":
+                        x_goal, y_goal = self.goals[0].x, self.goals[0].y
+                    elif self.name == "robot_2":
+                        x_goal, y_goal = self.goals[1].x, self.goals[1].y
+                    elif self.name == "robot_3":
+                        x_goal, y_goal = self.goals[2].x, self.goals[2].y
 
-            elif self.curr_state == "APPROACH":
-                rospy.loginfo("CURRENT STATE: APPROACH")
+                    if x_goal != None and y_goal != None:
+                        self.next_state = "APPROACH"
+                    else:
+                        self.next_state = "COMPUTE"
 
-                x_goal, y_goal = self.goals[0].x, self.goals[0].y # TODO: dynamic allocation needed here
-                
+
+
+            elif self.curr_state == "APPROACH":   
                 # send commands to hunter bot if the goal is outside of certain error threshold
                 if self.euclidean_distance(x_goal, y_goal) >= GOAL_THRESH:
                     self.cmd_vel = Twist()

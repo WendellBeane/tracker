@@ -15,6 +15,14 @@
     <arg name="robot_name" value="robot_1" />
   </include>
 
+  <include file="$(find tracker)/launch/follow_sim.launch">
+    <arg name="robot_name" value="robot_2" />
+  </include>
+
+    <include file="$(find tracker)/launch/follow_sim.launch">
+    <arg name="robot_name" value="robot_3" />
+  </include>
+
   <node pkg="tracker" type="compute_node.py" name="compute"  output="screen"/>
 
 </launch>
