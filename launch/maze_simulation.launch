@@ -1,7 +1,18 @@
+<!-- Simulation. -->
+
 <launch>
   <arg name="world_file" default="$(find tracker)/world/map.world" />
 
   <param name="/use_sim_time" value="true"/>
 
   <node pkg="stage_ros" type="stageros" name="stageros" args="$(arg world_file)" />
+
+  <include file="$(find tracker)/launch/follow_sim.launch">
+    <arg name="robot_name" value="robot_0" />
+  </include>
+
+  <include file="$(find tracker)/launch/follow_sim.launch">
+    <arg name="robot_name" value="robot_1" />
+  </include>
+
 </launch>

@@ -1,0 +1,10 @@
+<!-- turtlebot node -->
+<launch>
+
+  <arg name="robot_name" />
+  <group ns="$(arg robot_name)">
+
+    <node pkg="tracker" type="cmd_node.py" name="cmd" args="$(arg robot_name)" output="screen"/>
+    
+  </group>
+</launch>
