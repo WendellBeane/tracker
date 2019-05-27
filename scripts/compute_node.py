@@ -9,7 +9,7 @@ from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
 
 
-DISTANCE = 1
+DISTANCE = 0.9
 class Compute:
 
     def __init__ (self):

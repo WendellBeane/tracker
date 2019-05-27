@@ -2,8 +2,6 @@ from numpy.random import rand
 import numpy 
 from math import pow, sqrt, atan2
 from geometry_msgs.msg import Twist
-from std_srvs.srv import Trigger
-#from std_srvs.srv import TriggerResponse
 from nav_msgs.msg import Odometry
 import rospy
 import tf
@@ -12,7 +10,8 @@ from tracker.msg import Formation
 from sensor_msgs.msg import LaserScan
 
 # constants
-GOAL_THRESH = 0.15
+GOAL_THRESH = 0.1
+SAFE_DISTANCE = 0.75
 
 class Robot:
     def __init__(self, name, freq=1):
@@ -28,6 +27,8 @@ class Robot:
         # publishers for hunters
         self.cmd_pub = rospy.Publisher("/" + self.name + "/cmd_vel", Twist, queue_size = 1)
         self.cmd_vel = Twist()
+
+        self.is_moving = True
 
         # pose variables
         self.x = None
@@ -45,42 +46,48 @@ class Robot:
         r = rospy.Rate(10)
         while not rospy.is_shutdown():
 
-            if self.curr_state == "COMPUTE":
-                x_goal = None
-                y_goal = None
+            # obstacle detected
+            if self.is_moving == False:
+                self.cmd_vel = Twist()
+                # TODO: might want to navigate around the obstacle
 
-                if self.goals is None:  # wait for the target to be detected and pose to be stored
-                    self.next_state = "COMPUTE"
-                else:
-                    if self.name == "robot_1":
-                        x_goal, y_goal = self.goals[0].x, self.goals[0].y
-                    elif self.name == "robot_2":
-                        x_goal, y_goal = self.goals[1].x, self.goals[1].y
-                    elif self.name == "robot_3":
-                        x_goal, y_goal = self.goals[2].x, self.goals[2].y
+            else:
+                if self.curr_state == "COMPUTE":
+                    x_goal = None
+                    y_goal = None
 
-                    if x_goal != None and y_goal != None:
+                    if self.goals is None:  # wait for the target to be detected and pose to be stored
+                        self.next_state = "COMPUTE"
+                    else:
+                        if self.name == "robot_1":
+                            x_goal, y_goal = self.goals[0].x, self.goals[0].y
+                        elif self.name == "robot_2":
+                            x_goal, y_goal = self.goals[1].x, self.goals[1].y
+                        elif self.name == "robot_3":
+                            x_goal, y_goal = self.goals[2].x, self.goals[2].y
+
+                        if x_goal != None and y_goal != None:
+                            self.next_state = "APPROACH"
+                        else:
+                            self.next_state = "COMPUTE"
+
+
+
+                elif self.curr_state == "APPROACH":   
+                    # send commands to hunter bot if the goal is outside of certain error threshold
+                    if self.euclidean_distance(x_goal, y_goal) >= GOAL_THRESH:
+                        self.cmd_vel = Twist()
+                        self.cmd_vel.linear.x = self.linear_vel(x_goal, y_goal)
+                        self.cmd_vel.angular.z = self.angular_vel(x_goal, y_goal)
                         self.next_state = "APPROACH"
                     else:
-                        self.next_state = "COMPUTE"
+                        # stop movement
+                        self.cmd_vel = Twist()
+                        self.next_state = "ALIGN"
 
-
-
-            elif self.curr_state == "APPROACH":   
-                # send commands to hunter bot if the goal is outside of certain error threshold
-                if self.euclidean_distance(x_goal, y_goal) >= GOAL_THRESH:
-                    self.cmd_vel = Twist()
-                    self.cmd_vel.linear.x = self.linear_vel(x_goal, y_goal)
-                    self.cmd_vel.angular.z = self.angular_vel(x_goal, y_goal)
-                    self.next_state = "APPROACH"
-                else:
-                    # stop movement
-                    self.cmd_vel = Twist()
-                    self.next_state = "ALIGN"
-
-            elif self.curr_state == "ALIGN":
-                # TODO: rotate robot until the heading matches the target's yaw
-                print("In ALIGN state")
+                elif self.curr_state == "ALIGN":
+                    # TODO: rotate robot until the heading matches the target's yaw
+                    print("In ALIGN state")
 
             self.cmd_pub.publish(self.cmd_vel)
             r.sleep()
@@ -129,20 +136,19 @@ class Robot:
         self.yaw = yaw
 
 
-
+    # TODO: edit this so we only look forward facing and can also navigate around the obstacle
+    # laser scan for obstacle avoidance
     def laser_scan_callback_1(self, laser_scan_msg):
         ranges = numpy.array(laser_scan_msg.ranges)
-        min_laser_scan_reading = ranges.min()
+        min_laser_scan_reading = numpy.min(ranges[numpy.nonzero(ranges)])
         reading_string = "Minimum laser scan reading: {}".format(min_laser_scan_reading)
         rospy.logdebug(reading_string) 
 
+        if min_laser_scan_reading < SAFE_DISTANCE:
+            self.is_moving = False
+        else:
+            self.is_moving = True
 
-        # # Assumption! Just stop once and exit.
-        # if min_laser_scan_reading < SAFE_DISTANCE:
-        #     #rospy.loginfo("is moving? " + str(self.is_moving))
-        #     self.is_moving = False
-        # else:
-        #     self.is_moving = True
 
 
     def shutdown(self):
