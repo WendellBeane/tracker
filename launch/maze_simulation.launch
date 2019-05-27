@@ -7,10 +7,8 @@
 
   <node pkg="stage_ros" type="stageros" name="stageros" args="$(arg world_file)" />
 
-  <include file="$(find tracker)/launch/follow_sim.launch">
-    <arg name="robot_name" value="robot_0" />
-  </include>
 
+  <!-- For the robot hunters -->
   <include file="$(find tracker)/launch/follow_sim.launch">
     <arg name="robot_name" value="robot_1" />
   </include>
@@ -22,6 +20,7 @@
     <include file="$(find tracker)/launch/follow_sim.launch">
     <arg name="robot_name" value="robot_3" />
   </include>
+  
 
   <node pkg="tracker" type="compute_node.py" name="compute"  output="screen"/>
 

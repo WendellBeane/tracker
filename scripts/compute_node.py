@@ -24,7 +24,7 @@ class Compute:
         self.formation_pub = rospy.Publisher('compute', Formation, queue_size=10)
 
 
-    # for simulation
+    # simulates the case where the targets odom data is known
     def target_odom_callback(self, msg):
         pose = msg.pose.pose
         quaternion = (
@@ -35,7 +35,7 @@ class Compute:
         euler = tf.transformations.euler_from_quaternion(quaternion)
         yaw = euler[2]
 
-        # update invidual robot's position
+        # update target's position
         self.target_x = pose.position.x
         self.target_y = pose.position.y
         self.target_yaw = yaw
@@ -50,12 +50,13 @@ if __name__ == "__main__":
         # get a new wifi signal message
         msg = Formation()
         msg.stamp = rospy.Time.now()
-        msg.frame_id = "temporary_frame"    #TODO
+        msg.frame_id = "target"
 
         point0 = Point()
         point1 = Point()
         point2 = Point()
 
+        # based on triangular formation computations, rotates based on target's yaw
         if compute.target_x and compute.target_y and compute.target_yaw:
             point0.x = compute.target_x + DISTANCE * cos(compute.target_yaw + float(pi)/float(6.0))
             point0.y = compute.target_y + DISTANCE * sin(compute.target_yaw + float(pi)/float(6.0))
@@ -66,7 +67,7 @@ if __name__ == "__main__":
             point2.x = compute.target_x + DISTANCE * cos(compute.target_yaw + float(3.0*pi)/float(2.0))
             point2.y = compute.target_y + DISTANCE * sin(compute.target_yaw + float(3.0*pi)/float(2.0))
 
-
+        # Note: The formation points have not been computed if all points are (0,0)
         msg.points.append(point0)
         msg.points.append(point1)
         msg.points.append(point2)
