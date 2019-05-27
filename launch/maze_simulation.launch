@@ -15,4 +15,6 @@
     <arg name="robot_name" value="robot_1" />
   </include>
 
+  <node pkg="tracker" type="compute_node.py" name="compute"  output="screen"/>
+
 </launch>

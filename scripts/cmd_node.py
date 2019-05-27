@@ -6,4 +6,4 @@ if __name__ == "__main__":
     rospy.init_node("cmd")
     robot = Robot()
     robot.spin()
-    #rospy.on_shutdown(robot.shutdown())
+    rospy.on_shutdown(robot.shutdown())

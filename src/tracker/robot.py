@@ -144,8 +144,8 @@ class Robot:
         #     self.is_moving = True
 
 
-    # def shutdown(self):
-    #     rospy.loginfo("Shutting down the turtlebot")
-    #     self.cmd_pub.publish(Twist())
-    #     rospy.sleep(1)
-    #     rospy.loginfo("Goodbye!")
+    def shutdown(self):
+        rospy.loginfo("Shutting down the turtlebot")
+        self.cmd_pub.publish(Twist())
+        rospy.sleep(1)
+        rospy.loginfo("Goodbye!")
