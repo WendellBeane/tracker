@@ -38,7 +38,7 @@ floorplan
 # throw in a target
 target
 (
-  pose [ 3.000 6.000 0.000 34.377 ]
+  pose [ 2.000 7.000 0.000 34.377 ]
   name "robot_0"
   color "red"
   # blob_return 1
@@ -58,7 +58,7 @@ turtlebot
 
 turtlebot
 (
-  pose [ 5.000 5.000 0.000 10.783 ]
+  pose [ 2.000 1.000 0.000 10.783 ]
   name "robot_2"
   color "black"
   # blobfinder 

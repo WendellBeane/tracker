@@ -4,6 +4,7 @@ from std_srvs.srv import Trigger
 from nav_msgs.msg import Odometry
 import rospy
 import tf
+from math import cos, sin
 from sensor_msgs.msg import LaserScan
 
 
@@ -19,12 +20,14 @@ class Control_Robot:
         self.x = None
         self.y = None
         self.yaw = None
+        self.vel = None
         #States are tracking, collision avoidance, cooperative collision avoidance, circle formation
         self.curr_state = "TRACKING"
 
         self.prey_x 
         self.prey_y
         self.prey_yaw
+        self.prey_vel = None
 
         self.cmd_pub = rospy.Publisher("/robot_1/cmd_vel", Twist, queue_size = 1)
         self.cmd_vel = Twist()
@@ -45,7 +48,7 @@ class Control_Robot:
 
        		self.cmd_pub.publish(self.cmd_vel)
 
-    def odometry_callback(self, msg):
+    def odometry_callback(self, odometry_msg):
     	pose = odometry_msg.pose.pose
         quaternion = (
             pose.orientation.x,
@@ -59,8 +62,9 @@ class Control_Robot:
         self.x = pose.position.x
         self.y = pose.position.y
         self.yaw = yaw
+        self.vel = odometry_msg.twist.twist.linear
 
-    def target_subscriber(self, msg);
+    def target_subscriber(self, odometry_msg);
     	pose = odometry_msg.pose.pose
         quaternion = (
             pose.orientation.x,
@@ -74,8 +78,13 @@ class Control_Robot:
         self.prey_x = pose.position.x
         self.prey_y = pose.position.y
         self.prey_yaw = yaw
-        self.prey_lin_velocity = msg.twist.twist.linear
-        self.prey_angular_velocity = msg.twist.twist.angular
+        self.prey_vel = odometry_msg.twist.twist.linear
+        # self.prey_angular_velocity = odometry_msg.twist.twist.angular
+
+    def set_tracking_velocity():
+        vel_x = self.vel * cos(self.yaw)
+        vel_y = self.vel * sin(self.yaw)
+        
 
 
 

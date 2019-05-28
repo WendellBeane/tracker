@@ -21,9 +21,9 @@ class Robot:
         # initialize subscribers (for hunters)
         rospy.Subscriber("/" + self.name + "/base_pose_ground_truth", Odometry, self.odometry_callback_1)
         rospy.Subscriber("/" + self.name + "/base_scan", LaserScan, self.laser_scan_callback_1)
-
+        rospy.Subscriber("/robot_0/base_pose_ground_truth", Odometry, self.target_odom_callback)
         rospy.Subscriber("/compute", Formation, self.compute_callback)
-
+        
         # publishers for hunters
         self.cmd_pub = rospy.Publisher("/" + self.name + "/cmd_vel", Twist, queue_size = 1)
         self.cmd_vel = Twist()
@@ -34,7 +34,9 @@ class Robot:
         self.x = None
         self.y = None
         self.yaw = None
-
+        self.target_x = None
+        self.target_y = None
+        self.target_yaw = None
         self.goals = None
 
         # behavioral state machine
@@ -50,8 +52,6 @@ class Robot:
             if self.is_moving == False:
                 self.cmd_vel = Twist()
                 self.cmd_vel.angular.z = 0.2
-                # self.cmd_vel.linear.x = 0.1
-                # TODO: might want to navigate around the obstacle
 
             else:
 
@@ -66,6 +66,7 @@ class Robot:
 
                     # target has been detected
                     else:
+                        
                         # assign goals based on robot name 
                         if self.name == "robot_1":
                             x_goal, y_goal = self.goals[0].x, self.goals[0].y
@@ -97,11 +98,16 @@ class Robot:
                 # TODO: rotate robot until the heading matches the target's yaw
                 elif self.curr_state == "ALIGN":
                     print("In ALIGN state")
+                    self.align_with_target()
 
             self.cmd_pub.publish(self.cmd_vel)
             self.curr_state = self.next_state
             r.sleep()
 
+    def align_with_target(self):
+        if abs(self.yaw - self.target_yaw) >= 0.5:
+            self.cmd_vel= Twist()
+            self.cmd_vel.angular.z = (self.yaw - self.target_yaw)
 
     # The functions below are from the following ROS tutorial: http://wiki.ros.org/turtlesim/Tutorials/Go%20to%20Goal
     def euclidean_distance(self, x_goal, y_goal):
@@ -117,7 +123,7 @@ class Robot:
         return atan2(y_goal - self.y, x_goal - self.x)
 
     def angular_vel(self, x_goal, y_goal, constant=6):
-        # rospy.loginfo("Angular vel is:" + str(constant * self.steering_angle(x_goal, y_goal)-))
+        
         return constant * (self.steering_angle(x_goal, y_goal) - self.yaw)
 
     def compute_callback(self, formation_msg):
@@ -129,6 +135,21 @@ class Robot:
             self.goals = None
         else:
             self.goals = goals
+
+    def target_odom_callback(self, odometry_msg):
+        pose = odometry_msg.pose.pose
+        quaternion = (
+            pose.orientation.x,
+            pose.orientation.y,
+            pose.orientation.z,
+            pose.orientation.w)
+        euler = tf.transformations.euler_from_quaternion(quaternion)
+        yaw = euler[2]
+
+        # update invidual robot's position
+        self.target_x = pose.position.x
+        self.target_y = pose.position.y
+        self.target_yaw = yaw
 
 
     def odometry_callback_1(self, odometry_msg):
