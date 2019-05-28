@@ -49,6 +49,8 @@ class Robot:
             # obstacle detected
             if self.is_moving == False:
                 self.cmd_vel = Twist()
+                self.cmd_vel.angular.z = 0.2
+                # self.cmd_vel.linear.x = 0.1
                 # TODO: might want to navigate around the obstacle
 
             else:
@@ -108,12 +110,14 @@ class Robot:
         return sqrt(pow((x_goal - self.x), 2) + pow((y_goal - self.y), 2))
 
     def linear_vel(self, x_goal, y_goal, constant=1.5):
+
         return constant * self.euclidean_distance(x_goal, y_goal)
     
     def steering_angle(self, x_goal, y_goal):
         return atan2(y_goal - self.y, x_goal - self.x)
 
     def angular_vel(self, x_goal, y_goal, constant=6):
+        # rospy.loginfo("Angular vel is:" + str(constant * self.steering_angle(x_goal, y_goal)-))
         return constant * (self.steering_angle(x_goal, y_goal) - self.yaw)
 
     def compute_callback(self, formation_msg):
