@@ -10,7 +10,7 @@ from tracker.msg import Formation
 from sensor_msgs.msg import LaserScan
 
 # constants
-GOAL_THRESH = 0.1
+GOAL_THRESH = 0.275
 SAFE_DISTANCE = 0.75
 
 class Robot:
@@ -29,6 +29,7 @@ class Robot:
         self.cmd_vel = Twist()
 
         self.is_moving = True
+        self.reached_goal = False
 
         # pose variables
         self.x = None
@@ -47,11 +48,13 @@ class Robot:
         while not rospy.is_shutdown():
 
             # obstacle detected
-            if self.is_moving == False:
+
+            if self.reached_goal == True:
                 self.cmd_vel = Twist()
-                self.cmd_vel.angular.z = 0.2
-                # self.cmd_vel.linear.x = 0.1
-                # TODO: might want to navigate around the obstacle
+
+            elif self.is_moving == False:
+                self.cmd_vel = Twist()
+                self.cmd_vel.angular.z = 0.5
 
             else:
 
@@ -66,6 +69,7 @@ class Robot:
 
                     # target has been detected
                     else:
+                        self.reached_goal == False
                         # assign goals based on robot name 
                         if self.name == "robot_1":
                             x_goal, y_goal = self.goals[0].x, self.goals[0].y
@@ -89,14 +93,16 @@ class Robot:
                         self.cmd_vel.linear.x = self.linear_vel(x_goal, y_goal)
                         self.cmd_vel.angular.z = self.angular_vel(x_goal, y_goal)
                         self.next_state = "APPROACH"
+
                     else:
                         # stop movement once goal reached
+                        self.reached_goal == True
                         self.cmd_vel = Twist()
-                        self.next_state = "ALIGN"
+                        self.next_state = "COMPUTE"
 
-                # TODO: rotate robot until the heading matches the target's yaw
-                elif self.curr_state == "ALIGN":
-                    print("In ALIGN state")
+                # # TODO: rotate robot until the heading matches the target's yaw
+                # elif self.curr_state == "ALIGN":
+                #     print("In ALIGN state")
 
             self.cmd_pub.publish(self.cmd_vel)
             self.curr_state = self.next_state
@@ -105,19 +111,16 @@ class Robot:
 
     # The functions below are from the following ROS tutorial: http://wiki.ros.org/turtlesim/Tutorials/Go%20to%20Goal
     def euclidean_distance(self, x_goal, y_goal):
-        print("GOAL: " + str(x_goal) +", " + str(y_goal))
         """Euclidean distance between current pose and the goal."""
         return sqrt(pow((x_goal - self.x), 2) + pow((y_goal - self.y), 2))
 
     def linear_vel(self, x_goal, y_goal, constant=1.5):
-
         return constant * self.euclidean_distance(x_goal, y_goal)
     
     def steering_angle(self, x_goal, y_goal):
         return atan2(y_goal - self.y, x_goal - self.x)
 
     def angular_vel(self, x_goal, y_goal, constant=6):
-        # rospy.loginfo("Angular vel is:" + str(constant * self.steering_angle(x_goal, y_goal)-))
         return constant * (self.steering_angle(x_goal, y_goal) - self.yaw)
 
     def compute_callback(self, formation_msg):
