@@ -7,7 +7,7 @@
 ## Setup
 These setup instructions assume that you have stageROS set up on your system.
 
-1) Copy the package `turtlebot_tracker` into `catkin_ws/src` and rename directory to `tracker`
+1) Copy the package `turtlebot_tracker` into `catkin_ws/src`
 
 2) Run `catkin_make` in the `catkin_ws` folder
 
