@@ -3,12 +3,14 @@
 
 **Report**: <insert link here>
 
+NOTE: THIS DOCUMENT IS STILL UNDER DEVELOPMENT
+
 ## Setup
 These setup instructions assume that you have the ability to ssh into the Raspberry Pi controlling the Turtlebot's in the Robotics Lab at Dartmouth.
 
 ### MultiRobot Networking Setup
 
-####On leader (turtlebot 8):
+#### On leader (turtlebot 8):
 1) Copy the package `tracker` into `catkin_ws/src`
 
 2) Run `catkin_make` in the `catkin_ws` folder
@@ -16,7 +18,7 @@ These setup instructions assume that you have the ability to ssh into the Raspbe
 3) Run`source devel/setup.bash` in the `catkin_ws` folder
 
 
-####On followers:
+#### On followers:
 
 1) Copy the following lines into a bash script called `dongle.sh`. Edit it to include the corect interface name and ssid you want to connect:
 

@@ -59,16 +59,5 @@ define turtlebot position
     watts 100.0
   ) 
 
-  # blobfinder
-  # (
-  #   # number of colours to look for
-  #   channels_count 1
-  #   # which colours to look for
-  #   channels ["red"]
-  #   # camera parameters
-  #   image [32 32] #resolution
-  #   range_max 5.00
-  #   ptz [0 0 60]
-  # )
 )
 
