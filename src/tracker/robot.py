@@ -39,7 +39,8 @@ class Robot:
         self.target_y = None
         self.target_yaw = None
         self.goals = None
-
+        self.x_goal = None
+        self.y_goal = None 
         # behavioral state machine
         self.curr_state = "COMPUTE" #TODO: Change to SEARCH or IDLE when that is written
         self.next_state = None
@@ -63,8 +64,9 @@ class Robot:
 
                 # behavior state machine is secondary to obstacle handling
                 if self.curr_state == "COMPUTE":
-                    x_goal = None
-                    y_goal = None
+                    self.x_goal = None
+                    self.y_goal = None
+                    rospy.loginfo("Current state is compute")
 
                     # target has not yet been detected
                     if self.goals is None:
@@ -76,14 +78,14 @@ class Robot:
                         self.reached_goal == False
                         # assign goals based on robot name 
                         if self.name == "robot_1":
-                            x_goal, y_goal = self.goals[0].x, self.goals[0].y
+                            self.x_goal, self.y_goal = self.goals[0].x, self.goals[0].y
                         elif self.name == "robot_2":
-                            x_goal, y_goal = self.goals[1].x, self.goals[1].y
+                            self.x_goal, self.y_goal = self.goals[1].x, self.goals[1].y
                         elif self.name == "robot_3":
-                            x_goal, y_goal = self.goals[2].x, self.goals[2].y
+                            self.x_goal, self.y_goal = self.goals[2].x, self.goals[2].y
 
                         # go to next state only if goals have been assigned to robot
-                        if x_goal != None and y_goal != None:
+                        if self.x_goal != None and self.y_goal != None:
                             self.next_state = "APPROACH"
                         else:
                             self.next_state = "COMPUTE"
@@ -92,10 +94,10 @@ class Robot:
                 elif self.curr_state == "APPROACH":   
 
                     # send velocity commands if the goal is outside of certain error threshold
-                    if self.euclidean_distance(x_goal, y_goal) >= GOAL_THRESH:
+                    if self.euclidean_distance(self.x_goal, self.y_goal) >= GOAL_THRESH:
                         self.cmd_vel = Twist()
-                        self.cmd_vel.linear.x = self.linear_vel(x_goal, y_goal)
-                        self.cmd_vel.angular.z = self.angular_vel(x_goal, y_goal)
+                        self.cmd_vel.linear.x = self.linear_vel(self.x_goal, self.y_goal)
+                        self.cmd_vel.angular.z = self.angular_vel(self.x_goal, self.y_goal)
                         self.next_state = "APPROACH"
 
                     else:
@@ -115,11 +117,13 @@ class Robot:
             r.sleep()
 
     def align_with_target(self):
-        if abs(self.yaw - self.target_yaw) >= 0.2:
+        if abs(self.yaw - self.target_yaw) >= 1:
             self.cmd_vel= Twist()
             self.cmd_vel.angular.z = (self.yaw - self.target_yaw)
+            
 
-        if abs(self.yaw - self.target_yaw) <= 0.2: 
+        if abs(self.yaw - self.target_yaw) <= 1: 
+            rospy.loginfo("aligned with target")
             self.cmd_vel= Twist()
             self.cmd_vel.angular.z = 0
             self.curr_state = "COMPUTE"
@@ -147,8 +151,10 @@ class Robot:
         if goals[0] == goals[1] and goals[1] == goals[2] and goals[0] == goals[2]:
             self.goals = None
         else:
-            self.goals = goals
-
+            if goals != self.goals:
+                self.goals = goals
+                self.curr_state = "COMPUTE"
+            
     def target_odom_callback(self, odometry_msg):
         pose = odometry_msg.pose.pose
         quaternion = (
